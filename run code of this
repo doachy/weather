@@ -1,0 +1,11 @@
+if [ ! -z "${external.port.19000}" -a ! -z "${external.port.19001}" ]; then
+set -a && REACT_NATIVE_PACKAGER_HOSTNAME="${container.ip}" && set +a
+echo "{ manifestPort: ${external.port.19000} }" > ${current.project.path}/.exprc
+jq ".expo.packagerOpts.port=${external.port.19001}" ${current.project.path}/app.json > _tmp.json && mv _tmp.json ${current.project.path}/app.json
+socat TCP4-LISTEN:19000,reuseaddr,fork TCP4:127.0.0.1:${external.port.19000} &
+socat TCP4-LISTEN:19001,reuseaddr,fork TCP4:127.0.0.1:${external.port.19001} &
+cd ${current.project.path} && clear
+npm start && kill $(ps aux | grep socat | grep -v grep | awk '{print $2}')
+else
+clear && echo "Run failed: No portforward found for 19000 or 19001"
+fi
